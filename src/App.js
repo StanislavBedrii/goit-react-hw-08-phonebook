@@ -1,31 +1,74 @@
-import React, { Suspense, lazy } from 'react';
-import { Route, NavLink, Switch } from 'react-router-dom';
-import routes from './routes';
+import { useEffect, lazy, Suspense } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { Switch } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-// import FeedbackOptions from './components/FeedbackOptions';
-// import Statistics from './components/Statistics';
-// import Section from './components/Section';
-// import Notification from './components/Notification';
-// import Container from './components/Container';
+import AppBar from './components/AppBar';
+import Preloader from './components/Preloader';
+import Container from './components/Container';
+import { authOperations } from './redux/auth';
+import { authSelectors } from './redux/auth';
+import PrivateRoute from './components/PrivateRoute';
+import PublicRoute from './components/PublicRoute';
 
-// const HomeView = lazy(() =>
-//   import('./views/HomeView.js' /* webpackChunkName: "home-view" */),
-// );
+import './App.css';
 
-// const App = () => (
-//   <>
-//     <AppBar />
+const HomeView = lazy(() =>
+  import('./views/HomeView' /* webpackChunkName: "home-view" */),
+);
 
-//     <Suspense fallback={<h1>Загружаем...</h1>}>
-//       <Switch>
-//         <Route exact path={routes.home} component={HomeView} />
-//         <Route path={routes.authors} component={AuthorsView} />
-//         <Route exact path={routes.books} component={BooksView} />
-//         <Route path={routes.bookDetails} component={BookDetailsView} />
-//         <Route component={NotFoundView} />
-//       </Switch>
-//     </Suspense>
-//   </>
-// );
+const RegisterView = lazy(() =>
+  import('./views/RegisterView' /* webpackChunkName: "register-view" */),
+);
+const LoginView = lazy(() =>
+  import('./views/LoginView' /* webpackChunkName: "login-view" */),
+);
+const ContactsView = lazy(() =>
+  import('./views/ContactsView' /* webpackChunkName: "contacts-view" */),
+);
 
-// export default App;
+function App() {
+  const dispatch = useDispatch();
+  const isFetchingCurrentUser = useSelector(
+    authSelectors.getIsFetchingCurrentUser,
+  );
+
+  useEffect(() => {
+    dispatch(authOperations.fetchCurrentUser());
+  }, [dispatch]);
+
+  return (
+    !isFetchingCurrentUser && (
+      <div className="App">
+        <Container>
+          <AppBar />
+
+          <Suspense fallback={<Preloader />}>
+            <Switch>
+              <PublicRoute exact path="/">
+                <HomeView />
+              </PublicRoute>
+
+              <PublicRoute exact path="/register" restricted>
+                <RegisterView />
+              </PublicRoute>
+
+              <PublicRoute exact path="/login" restricted>
+                <LoginView />
+              </PublicRoute>
+
+              <PrivateRoute path="/contacts">
+                <ContactsView />
+              </PrivateRoute>
+            </Switch>
+          </Suspense>
+
+          <ToastContainer autoClose={3000} />
+        </Container>
+      </div>
+    )
+  );
+}
+
+export default App;
